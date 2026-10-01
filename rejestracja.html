@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rejestracja — KBK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/common.css">
 <style>
   :root {
@@ -468,10 +471,10 @@
         <div class="hint error" id="consentHint" style="display:none;"></div>
       </div>
 
-      <label for="pin">PIN (6 cyfr)</label>
+      <label>PIN (6 cyfr)</label>
       <div class="pin-row">
         <div><input type="password" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" required></div>
-        <div><input type="password" id="pinRepeat" aria-label="Powtórz PIN" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="powtórz PIN" required></div>
+        <div><input type="password" id="pinRepeat" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="powtórz PIN" required></div>
       </div>
       <div class="hint" id="pinHint"></div>
 
@@ -484,7 +487,7 @@
         dobrowolne i możesz je wycofać w dowolnym momencie, kontaktując się z nami.
       </p>
     </form>
-    <div id="messageModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-hidden="true" inert aria-labelledby="modalMessage">
+    <div id="messageModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalMessage">
       <div class="modal">
         <p id="modalMessage"></p>
         <button type="button" id="modalOk">OK</button>
@@ -493,8 +496,8 @@
   </div>
 </div>
 
-<script src="public-config.js"></script>
-<script src="js/feedback.js?v=20260930-2"></script>
+<script src="public-config.js?v=20261001-3"></script>
+<script src="js/feedback.js?v=20261001-3"></script>
 <script>
   const APP_CONFIG = window.KBK_APP_CONFIG;
   const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
@@ -505,27 +508,10 @@
   const pageTitle = document.getElementById('pageTitle');
   const pageSubtitle = document.getElementById('pageSubtitle');
   const migrationSubmitBtn = document.getElementById('migrationSubmitBtn');
-  let messageDialogRelease = null;
 
   function showModal(message) {
     document.getElementById('modalMessage').textContent = message;
-    const modal = document.getElementById('messageModal');
-    if (modal.classList.contains('hidden')) {
-      modal.classList.remove('hidden');
-      messageDialogRelease = window.KBKDialog.open(modal, {
-        initialFocus: '#modalOk',
-        onEscape: closeMessageModal
-      });
-    }
-  }
-
-  function closeMessageModal() {
-    document.getElementById('messageModal').classList.add('hidden');
-    if (messageDialogRelease) {
-      const releaseFocus = messageDialogRelease;
-      messageDialogRelease = null;
-      releaseFocus();
-    }
+    document.getElementById('messageModal').classList.remove('hidden');
   }
 
   function registrationErrorMessage(error) {
@@ -549,7 +535,7 @@
   }
 
   document.getElementById('modalOk').addEventListener('click', function () {
-    closeMessageModal();
+    document.getElementById('messageModal').classList.add('hidden');
   });
 
   (function handleConfirmRedirect(){
