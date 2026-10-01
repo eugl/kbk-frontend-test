@@ -554,20 +554,6 @@
     aspect-ratio: 240 / 400;
   }
 
-  .journal-tag {
-    position: absolute;
-    top: 0;
-    left: 0;
-    padding: 7px 12px;
-    background: var(--teal-deep);
-    color: var(--white);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.62rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    z-index: 2;
-  }
-
   .journal-body {
     padding: 20px 22px 18px;
     display: flex;
@@ -1778,7 +1764,6 @@
         const img = extractImage(post);
         const title = escapeHtml(post.title || 'Bez tytułu');
         const excerpt = escapeHtml(cleanExcerpt(post.body));
-        const category = escapeHtml((post.category || 'wpis').toString().toUpperCase());
         const author = escapeHtml(post.author || HIVE_ACCOUNT);
         const url = `https://peakd.com/@${post.author}/${post.permlink}`;
 
@@ -1791,7 +1776,6 @@
         return `
           <a href="${url}" target="_blank" rel="noopener" class="journal-card">
             <div class="journal-cover">
-              <span class="journal-tag">${category}</span>
               ${cover}
             </div>
             <div class="journal-body">

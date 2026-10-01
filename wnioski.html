@@ -975,8 +975,7 @@
       });
       const data = await res.json();
       if (data.ok) {
-        banner.textContent = 'Wniosek zapisany — sprawdź maila, żeby go aktywować.';
-        banner.className = 'modal-banner show ok';
+        closeModals();
       } else if (pinReset.isLocked(data)) {
         closeModals();
         pinReset.open(login);
