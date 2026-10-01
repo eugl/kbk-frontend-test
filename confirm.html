@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Potwierdzanie — KBK</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/common.css">
 <style>
   :root {
@@ -216,10 +213,44 @@
 </div>
 
 <script src="public-config.js"></script>
-<script src="js/feedback.js"></script>
+<script src="js/feedback.js?v=20260930-2"></script>
 <script>
   const APP_CONFIG = window.KBK_APP_CONFIG;
   const actionMap = { register: 'confirmRegister', proposal: 'confirmProposal', vote: 'confirmVote', pinreset: 'confirmPinReset' };
+
+  function confirmationMessage(type, status, ok) {
+    const messages = {
+      register: {
+        ok: 'Rejestracja została potwierdzona. Możesz się zalogować.',
+        invalid: 'Link aktywacyjny jest nieprawidłowy lub wygasł.',
+        conflict: 'Konto lub adres e-mail są już zajęte.',
+        error: 'Nie udało się potwierdzić rejestracji. Spróbuj ponownie później.'
+      },
+      proposal: {
+        ok: 'Wniosek został potwierdzony.',
+        invalid: 'Link potwierdzający jest nieprawidłowy lub wygasł.',
+        error: 'Nie udało się potwierdzić wniosku. Spróbuj ponownie później.'
+      },
+      vote: {
+        ok: 'Głos został potwierdzony.',
+        invalid: 'Link potwierdzający jest nieprawidłowy lub wygasł.',
+        notfound: 'Wniosek nie istnieje lub został usunięty.',
+        ended: 'Czas głosowania już minął.',
+        error: 'Nie udało się potwierdzić głosu. Spróbuj ponownie później.'
+      },
+      pinreset: {
+        ok: 'PIN został zmieniony. Możesz się teraz zalogować.',
+        invalid: 'Link resetujący PIN jest nieprawidłowy lub wygasł.',
+        conflict: 'Nie udało się potwierdzić danych konta.',
+        error: 'Nie udało się zmienić PIN-u. Spróbuj ponownie później.'
+      }
+    };
+    if (Object.prototype.hasOwnProperty.call(messages, type) &&
+        Object.prototype.hasOwnProperty.call(messages[type], status)) {
+      return messages[type][status];
+    }
+    return ok ? 'Operacja została potwierdzona.' : 'Nie udało się potwierdzić operacji. Spróbuj ponownie później.';
+  }
 
   function setResult(ok, message) {
     const box = document.getElementById('message');
@@ -253,8 +284,8 @@
     fetch(backendUrl, { method: 'GET', cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
-        if (data && data.ok) { setResult(true, data.message || 'Potwierdzenie zakończyło się powodzeniem.'); return; }
-        setResult(false, (data && data.message) || 'Nie udało się potwierdzić konta.');
+        if (data && data.ok) { setResult(true, confirmationMessage(type, data.status, true)); return; }
+        setResult(false, confirmationMessage(type, data && data.status, false));
       })
       .catch(function () { setResult(false, 'Nie udało się potwierdzić konta. Spróbuj ponownie później.'); });
   }

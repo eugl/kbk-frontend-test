@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rejestracja — KBK</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/common.css">
 <style>
   :root {
@@ -471,10 +468,10 @@
         <div class="hint error" id="consentHint" style="display:none;"></div>
       </div>
 
-      <label>PIN (6 cyfr)</label>
+      <label for="pin">PIN (6 cyfr)</label>
       <div class="pin-row">
         <div><input type="password" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" required></div>
-        <div><input type="password" id="pinRepeat" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="powtórz PIN" required></div>
+        <div><input type="password" id="pinRepeat" aria-label="Powtórz PIN" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="powtórz PIN" required></div>
       </div>
       <div class="hint" id="pinHint"></div>
 
@@ -487,7 +484,7 @@
         dobrowolne i możesz je wycofać w dowolnym momencie, kontaktując się z nami.
       </p>
     </form>
-    <div id="messageModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalMessage">
+    <div id="messageModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-hidden="true" inert aria-labelledby="modalMessage">
       <div class="modal">
         <p id="modalMessage"></p>
         <button type="button" id="modalOk">OK</button>
@@ -497,7 +494,7 @@
 </div>
 
 <script src="public-config.js"></script>
-<script src="js/feedback.js"></script>
+<script src="js/feedback.js?v=20260930-2"></script>
 <script>
   const APP_CONFIG = window.KBK_APP_CONFIG;
   const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
@@ -508,14 +505,51 @@
   const pageTitle = document.getElementById('pageTitle');
   const pageSubtitle = document.getElementById('pageSubtitle');
   const migrationSubmitBtn = document.getElementById('migrationSubmitBtn');
+  let messageDialogRelease = null;
 
   function showModal(message) {
     document.getElementById('modalMessage').textContent = message;
-    document.getElementById('messageModal').classList.remove('hidden');
+    const modal = document.getElementById('messageModal');
+    if (modal.classList.contains('hidden')) {
+      modal.classList.remove('hidden');
+      messageDialogRelease = window.KBKDialog.open(modal, {
+        initialFocus: '#modalOk',
+        onEscape: closeMessageModal
+      });
+    }
+  }
+
+  function closeMessageModal() {
+    document.getElementById('messageModal').classList.add('hidden');
+    if (messageDialogRelease) {
+      const releaseFocus = messageDialogRelease;
+      messageDialogRelease = null;
+      releaseFocus();
+    }
+  }
+
+  function registrationErrorMessage(error) {
+    var messages = {
+      invalid_login: 'Podaj poprawną nazwę użytkownika.',
+      invalid_email: 'Podaj poprawny adres e-mail.',
+      invalid_pin: 'PIN musi składać się z dokładnie 6 cyfr.',
+      rodo_consent_required: 'Zaakceptuj obowiązkową zgodę na przetwarzanie danych osobowych.',
+      phone_required: 'Aby wyrazić zgodę na kontakt WhatsApp, podaj numer telefonu.',
+      address_required: 'Aby wyrazić zgodę na kontakt pocztowy, podaj adres.',
+      migration_email_mismatch: 'Podany adres e-mail nie zgadza się z danymi zatwierdzonymi dla tego loginu.',
+      login_taken: 'Ten login jest już zajęty. Wybierz inny.',
+      email_taken: 'Ten adres e-mail jest już zarejestrowany.',
+      too_fast: 'Formularz został wysłany zbyt szybko. Odczekaj chwilę i spróbuj ponownie.',
+      mail_failed: 'Nie udało się wysłać wiadomości aktywacyjnej. Spróbuj ponownie później.',
+      server_error: 'Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.'
+    };
+    return Object.prototype.hasOwnProperty.call(messages, error)
+      ? messages[error]
+      : 'Nie udało się zarejestrować konta. Spróbuj ponownie później.';
   }
 
   document.getElementById('modalOk').addEventListener('click', function () {
-    document.getElementById('messageModal').classList.add('hidden');
+    closeMessageModal();
   });
 
   (function handleConfirmRedirect(){
@@ -528,7 +562,7 @@
       invalid: 'Link jest nieprawidłowy albo wygasł. Zarejestruj się ponownie.',
       error: 'Link jest nieprawidłowy albo wygasł. Zarejestruj się ponownie.'
     };
-    const message = map[status] || map.invalid;
+    const message = Object.prototype.hasOwnProperty.call(map, status) ? map[status] : map.invalid;
     showModal(message);
     window.history.replaceState({}, document.title, window.location.pathname);
   })();
@@ -589,8 +623,10 @@
         missing: 'Podany użytkownik nie istnieje. Stwórz nowe konto wybierając opcję "Chcę utworzyć nowe konto rycarowe".',
         mismatch: 'Podany adres e-mail nie zgadza się z adresem zapisanym dla tego użytkownika.'
       };
-      if (!result.ok) return showModal(result.message || 'Nie udało się wysłać zgłoszenia.');
-      showModal(messages[result.status] || 'Nie udało się wysłać zgłoszenia.');
+      if (!result.ok) return showModal(registrationErrorMessage(result.error));
+      showModal(Object.prototype.hasOwnProperty.call(messages, result.status)
+        ? messages[result.status]
+        : 'Nie udało się wysłać zgłoszenia.');
     }).catch(function () { showModal('Nie udało się połączyć z backendem. Spróbuj ponownie później.'); })
       .finally(function () {
         migrationSubmitBtn.disabled = false;
@@ -686,13 +722,6 @@
     if (document.getElementById('zgodaPocztowy').checked && !adres) {
       showModal('Aby wyrazić zgodę na kontakt pocztowy, podaj adres do wysyłki.'); return;
     }
-    if (telefon && !document.getElementById('zgodaWhatsapp').checked) {
-      showModal('Jeśli podajesz numer telefonu, musisz zaakceptować zgodę na kontakt WhatsApp.'); return;
-    }
-    if (adres && !document.getElementById('zgodaPocztowy').checked) {
-      showModal('Jeśli podajesz adres, musisz zaakceptować zgodę na kontakt pocztowy.'); return;
-    }
-
     submitBtn.disabled = true;
     submitBtn.textContent = 'Wysyłanie…';
 
@@ -713,18 +742,15 @@
         if (result && result.ok) {
           showModal('Wysłano zapytanie o aktywację konta. Sprawdź skrzynkę mailową, by potwierdzić rejestrację.');
           form.reset();
-          updatePostalConsentState();
+          updateConsentState();
           pinHint.textContent = ''; pinHint.className = 'hint';
           consentBlock.classList.add('open');
         } else {
-          var message = result && result.message ? result.message : 'Nie udało się zarejestrować konta.';
-          if (result && result.error === 'email_taken') message = 'Ten adres e-mail jest już zarejestrowany.';
-          if (result && result.error === 'login_taken') message = 'Ten login jest już zajęty. Wybierz inny.';
-          showModal(message);
+          showModal(registrationErrorMessage(result && result.error));
         }
       })
       .catch(function () {
-        showModal('Nie udało się połączyć z backendem. Spróbuj ponownie później.');
+        showModal('Nie udało się odczytać odpowiedzi serwera. Sprawdź pocztę: jeśli otrzymałeś link aktywacyjny, rejestracja jest w toku i nie wysyłaj formularza ponownie. Jeśli wiadomość nie dotrze, spróbuj ponownie za kilka minut.');
       })
       .finally(function () {
         submitBtn.disabled = false;
